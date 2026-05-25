@@ -1317,16 +1317,30 @@
         // ----------------------------------------------------
         const STORAGE_KEY = 'smart_parts_checklist';
         let items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        // Optional upgrade: add createdDate and purchasedDate to old items if missing
+        // Sanitize existing items to prevent schema discrepancies and ensure safe cloud sync
         items.forEach(i => {
-           if (!i.createdDate) {
-               const d = new Date(i.timestamp || Date.now());
-               i.createdDate = d.toISOString().split('T')[0];
-           }
-           if (i.completed && !i.purchasedDate) {
-               i.purchasedDate = i.createdDate;
-           }
-         });
+            if (!i.id) i.id = Date.now().toString() + Math.random().toString(36).substring(2, 7);
+            if (!i.category) i.category = 'عام';
+            if (!i.subcategory) i.subcategory = 'عام';
+            if (i.qty === undefined || i.qty === null || isNaN(parseInt(i.qty))) {
+                i.qty = 0;
+            } else {
+                i.qty = parseInt(i.qty);
+            }
+            if (!i.tags || !Array.isArray(i.tags)) i.tags = [];
+            if (i.completed === undefined || i.completed === null) i.completed = false;
+            if (!i.timestamp) i.timestamp = Date.now();
+            if (!i.createdDate) {
+                const d = new Date(i.timestamp || Date.now());
+                i.createdDate = d.toISOString().split('T')[0];
+            }
+            if (i.completed && !i.purchasedDate) {
+                i.purchasedDate = i.createdDate;
+            }
+            if (i.archived === undefined || i.archived === null) {
+                i.archived = false;
+            }
+        });
 
         // Setup real-time listener and automatic local-to-cloud migration
         if (db) {
@@ -1478,7 +1492,10 @@
 
         document.getElementById('saveInvoiceBtn').onclick = () => {
             const purchasedItems = items.filter(i => i.completed && !i.archived);
-            if (purchasedItems.length === 0) return;
+            if (purchasedItems.length === 0) {
+                window.showToast("لا توجد قطع مكتملة (مشتراة) لحفظها في فاتورة. اضغط على القطع لتحديدها باللون الأخضر أولاً.", "warning");
+                return;
+            }
 
             showConfirm(
                 'حفظ الفاتورة',
@@ -1512,7 +1529,10 @@
 
         document.getElementById('deleteAllBtn').onclick = () => {
             const activeItems = items.filter(i => !i.archived);
-            if (activeItems.length === 0) return;
+            if (activeItems.length === 0) {
+                window.showToast("القائمة الحالية فارغة بالفعل ولا توجد قطع لحذفها.", "warning");
+                return;
+            }
 
             showConfirm(
                 'حذف الكل',
