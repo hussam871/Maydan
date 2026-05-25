@@ -307,6 +307,76 @@
 
         .btn-cancel:hover { background: rgba(255, 255, 255, 0.1); }
         .btn-confirm:hover { filter: brightness(1.1); }
+
+        /* Toast Notification Styles */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: rgba(10, 10, 12, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: auto;
+            direction: rtl;
+        }
+
+        .toast.warning {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(30, 10, 10, 0.95);
+        }
+
+        .toast.success {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(10, 30, 15, 0.95);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 4px;
+            display: flex;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .toast-close:hover {
+            color: var(--text);
+        }
+
+        @keyframes toastIn {
+            from { transform: translate(-50%, 20px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        @keyframes toastOut {
+            from { transform: translate(-50%, 0); opacity: 1; }
+            to { transform: translate(-50%, 20px); opacity: 0; }
+        }
         
         input[type="text"] {
             text-transform: capitalize;
@@ -1133,11 +1203,64 @@
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch, getDocFromServer } from 'firebase/firestore';
         import firebaseConfig from './firebase-applet-config.json';
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+        // Toast Notification System
+        window.showToast = function(message, type = 'info') {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = '';
+            if (type === 'warning') {
+                icon = '⚠️';
+            } else if (type === 'success') {
+                icon = '✅';
+            }
+
+            toast.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">${icon}</span>
+                    <span>${message}</span>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto dismiss
+            setTimeout(() => {
+                toast.style.animation = 'toastOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                setTimeout(() => {
+                    toast.remove();
+                    if (container.children.length === 0) {
+                        container.remove();
+                    }
+                }, 300);
+            }, 5000);
+        };
+
+        let app = null;
+        let db = null;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+            console.log("Firebase initialized successfully.");
+        } catch (e) {
+            console.error("Firebase Initialization failed:", e);
+            setTimeout(() => {
+                window.showToast("المزامنة السحابية غير متوفرة. يتم الحفظ محلياً في جهازك.", "warning");
+            }, 1000);
+        }
 
         // Core validation of connection to Firestore as required by Skill
         async function testConnection() {
+            if (!db) return;
             try {
                 await getDocFromServer(doc(db, 'test', 'connection'));
                 console.log("Firestore connection test passed.");
@@ -1165,11 +1288,14 @@
                 path,
                 authInfo: {}
             };
-            console.error('Firestore Error: ', JSON.stringify(errInfo));
-            throw new Error(JSON.stringify(errInfo));
+            console.error('Firestore Graceful Warning: ', JSON.stringify(errInfo));
+            
+            // Do NOT throw anymore! Display a subtle warning instead.
+            window.showToast("تعذر الاتصال بالسحابة (Firebase) - يتم الحفظ والتشغيل محلياً وجاهز للعمل.", "warning");
         }
 
         async function dbSaveItem(item) {
+            if (!db) return;
             try {
                 await setDoc(doc(db, 'items', item.id), item);
             } catch (e) {
@@ -1178,6 +1304,7 @@
         }
 
         async function dbDeleteItem(id) {
+            if (!db) return;
             try {
                 await deleteDoc(doc(db, 'items', id));
             } catch (e) {
@@ -1202,39 +1329,47 @@
          });
 
         // Setup real-time listener and automatic local-to-cloud migration
-        onSnapshot(collection(db, 'items'), async (snapshot) => {
-            if (snapshot.empty && items.length > 0) {
-                console.log("Migrating local items to Firestore...");
-                const batch = writeBatch(db);
-                items.forEach(item => {
-                    const docRef = doc(db, 'items', item.id);
-                    batch.set(docRef, item);
-                });
-                try {
-                    await batch.commit();
-                    console.log("Migration successful!");
-                } catch (e) {
-                    console.error("Migration failed:", e);
-                }
-                return;
-            }
+        if (db) {
+            try {
+                onSnapshot(collection(db, 'items'), async (snapshot) => {
+                    if (snapshot.empty && items.length > 0) {
+                        console.log("Migrating local items to Firestore...");
+                        const batch = writeBatch(db);
+                        items.forEach(item => {
+                            const docRef = doc(db, 'items', item.id);
+                            batch.set(docRef, item);
+                        });
+                        try {
+                            await batch.commit();
+                            console.log("Migration successful!");
+                        } catch (e) {
+                            console.error("Migration failed:", e);
+                        }
+                        return;
+                    }
 
-            const list = [];
-            snapshot.forEach((snapshotDoc) => {
-                list.push(snapshotDoc.data());
-            });
-            list.sort((a, b) => b.timestamp - a.timestamp);
-            items = list;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-            renderChips();
-            render();
-            const sheetsView = document.getElementById('sheets-view');
-            if (sheetsView && sheetsView.classList.contains('active')) {
-                renderSheets();
+                    const list = [];
+                    snapshot.forEach((snapshotDoc) => {
+                        list.push(snapshotDoc.data());
+                    });
+                    list.sort((a, b) => b.timestamp - a.timestamp);
+                    items = list;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+                    renderChips();
+                    render();
+                    const sheetsView = document.getElementById('sheets-view');
+                    if (sheetsView && sheetsView.classList.contains('active')) {
+                        renderSheets();
+                    }
+                }, (error) => {
+                    handleFirestoreError(error, OperationType.LIST, 'items');
+                });
+            } catch (err) {
+                console.error("onSnapshot failure:", err);
             }
-        }, (error) => {
-            handleFirestoreError(error, OperationType.LIST, 'items');
-        });
+        } else {
+            console.log("Firebase listener offline - operating in local storage mode.");
+        }
 
         // DOM Elements
         const DOM = {
@@ -1349,14 +1484,25 @@
                 'حفظ الفاتورة',
                 `سيتم نقل ${purchasedItems.length} قطع إلى الفواتير السابقة. هل أنت متأكد؟`,
                 async () => {
-                    const batch = writeBatch(db);
+                    // Always update local storage for responsive UX & offline fallback first
                     purchasedItems.forEach(i => {
                         i.archived = true;
+                    });
+                    save();
+
+                    if (!db) {
+                        window.showToast("تم الحفظ في جهازك (محلياً).", "success");
+                        return;
+                    }
+
+                    const batch = writeBatch(db);
+                    purchasedItems.forEach(i => {
                         const docRef = doc(db, 'items', i.id);
                         batch.set(docRef, i);
                     });
                     try {
                         await batch.commit();
+                        window.showToast("تم مزامنة الفاتورة مع السحابة بنجاح.", "success");
                     } catch (e) {
                         handleFirestoreError(e, OperationType.WRITE, 'items/batch-archive');
                     }
@@ -1372,6 +1518,15 @@
                 'حذف الكل',
                 'سيتم حذف جميع القطع في القائمة الحالية (المشتراة وغير المشتراة). هل أنت متأكد؟',
                 async () => {
+                    // Update state locally first (optimistic)
+                    items = items.filter(i => i.archived);
+                    save();
+
+                    if (!db) {
+                        window.showToast("تم حذف العناصر محلياً من جهازك.", "success");
+                        return;
+                    }
+
                     const batch = writeBatch(db);
                     activeItems.forEach(i => {
                         const docRef = doc(db, 'items', i.id);
@@ -1379,6 +1534,7 @@
                     });
                     try {
                         await batch.commit();
+                        window.showToast("تم حذف العناصر ومزامنتها سحابياً بنجاح.", "success");
                     } catch (e) {
                         handleFirestoreError(e, OperationType.DELETE, 'items/batch-delete-active');
                     }
@@ -1988,6 +2144,11 @@
                     items = items.filter(i => !(i.completed && i.purchasedDate === dateStr && i.archived));
                     save();
 
+                    if (!db) {
+                        window.showToast("تم الحذف محلياً.", "success");
+                        return;
+                    }
+
                     // Cloud sync
                     const batch = writeBatch(db);
                     toDelete.forEach(i => {
@@ -1996,6 +2157,7 @@
                     });
                     try {
                         await batch.commit();
+                        window.showToast("تم حذف الفاتورة ومزامنة التغيير.", "success");
                     } catch (e) {
                         handleFirestoreError(e, OperationType.DELETE, 'items/batch-delete-invoice');
                     }
