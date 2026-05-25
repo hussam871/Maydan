@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Parts Checklist</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&display=swap');
+
+        :root {
+            --bg: #0a0a0c;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent: #3b82f6;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --transition: all 0.2s;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Plus Jakarta Sans', 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body { 
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.05), transparent 40%);
+            color: var(--text); 
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container { 
+            max-width: 640px; 
+            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 16px;
+            text-align: right;
+            flex-wrap: wrap;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0;
+            letter-spacing: normal;
+        }
+
+        .stats-glass {
+            display: flex;
+            gap: 12px;
+        }
+
+        .stats-glass > span[style*="color"] {
+            display: none; /* hide the pipe separator */
+        }
+
+        .stat-pending, .stat-purchased {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 8px 16px;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-dim);
+            min-width: 80px;
+        }
+
+        .stat-pending span {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--danger);
+        }
+
+        .stat-purchased span {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+
+        .input-glass {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .category-selector {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .cat-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .cat-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+        }
+
+        .cat-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .inputs-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        input[type="text"], input[type="number"], select {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 13px;
+            outline: none;
+            transition: var(--transition);
+        }
+        
+        input[type="text"], input[type="number"] {
+            flex: 1;
+            width: 100%;
+            padding: 10px 35px 10px 12px;
+        }
+
+        input[type="number"] {
+            flex: 0 0 70px;
+            text-align: center;
+            padding: 10px;
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button,
+        .modal-input[type="number"]::-webkit-outer-spin-button,
+        .modal-input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .header-action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .header-action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .save-btn:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .delete-all-btn:hover {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 400px;
+            padding: 24px;
+            text-align: center;
+            animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-content.glass {
+            background: rgba(10, 10, 12, 0.6) !important;
+            backdrop-filter: blur(24px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content h3 {
+            margin-bottom: 12px;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .modal-content p {
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+        }
+
+        .btn-confirm {
+            background: var(--accent);
+            border: none;
+            color: white;
+        }
+
+        .btn-cancel:hover { background: rgba(255, 255, 255, 0.1); }
+        .btn-confirm:hover { filter: brightness(1.1); }
+        
+        input[type="text"] {
+            text-transform: capitalize;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        input[type="text"]::placeholder, input[type="number"]::placeholder {
+            color: var(--text-dim);
+        }
+
+        .btn-add {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+            gap: 6px;
+        }
+
+        .btn-add:hover { background: #2563eb; }
+
+        .warning-msg {
+            color: #fbbf24;
+            background: rgba(245, 158, 11, 0.1);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+            margin-top: 12px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            font-weight: 600;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .filters-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: white;
+            font-size: 13px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .filter-chips {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding-bottom: 4px;
+            -ms-overflow-style: none; /* IE/Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .filter-chips::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .chip:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .chip.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #93c5fd;
+        }
+
+        .sub-chip {
+            font-size: 11px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-style: dashed;
+        }
+        
+        .sub-chip:hover {
+            border-style: solid;
+        }
+
+        .sub-chip.active {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+            border-style: solid;
+            color: #86efac;
+        }
+
+        #listContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 100px;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 4px;
+        }
+        
+        #listContainer::-webkit-scrollbar,
+        #historyContainer::-webkit-scrollbar,
+        .dev-card-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        #listContainer::-webkit-scrollbar-thumb,
+        #historyContainer::-webkit-scrollbar-thumb,
+        .dev-card-scroll::-webkit-scrollbar-thumb {
+            background-color: var(--glass-border);
+            border-radius: 4px;
+        }
+
+        .section-header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0 4px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .item-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+            animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            flex-direction: row;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .item-card.completed {
+            background: rgba(34, 197, 94, 0.05);
+            border-color: rgba(34, 197, 94, 0.15);
+            opacity: 0.8;
+        }
+
+        .item-card.completed .item-name {
+            text-decoration: line-through;
+            color: var(--text-dim);
+        }
+
+        .checkbox-wrapper { 
+            order: 2; 
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            appearance: none;
+            background: rgba(0,0,0,0.2);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+
+        .checkbox:checked {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .checkbox:checked::after {
+            content: '';
+            width: 3px;
+            height: 7px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
+        }
+
+        .item-content { 
+            flex: 1; 
+            min-width: 0; 
+            cursor: pointer; 
+            user-select: none; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            gap: 8px;
+        }
+        
+        .item-name-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .qty-badge {
+            background: white;
+            color: black;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .dot-sep {
+            color: var(--text-dim);
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .item-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* First line */
+            transition: var(--transition);
+        }
+
+        .tags-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+        
+        .tag.cat { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .tag.sub { background: rgba(59, 130, 246, 0.1); color: var(--accent); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .tag.extra { background: rgba(34, 197, 94, 0.1); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.2); }
+
+        .item-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            opacity: 1; /* Always visible for mobile */
+            transition: var(--transition);
+            align-items: center;
+            order: 1;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            color: var(--text-dim);
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover { background: rgba(255, 255, 255, 0.1); color: var(--text); }
+        .btn-icon.delete:hover { background: rgba(239, 68, 68, 0.2); color: var(--danger); border-color: rgba(239, 68, 68, 0.4); }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--glass);
+            border-radius: 12px;
+            border: 1px dashed var(--glass-border);
+            color: var(--text-dim);
+        }
+
+        .empty-state svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5; display: inline-block; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shrinkOut { from { opacity: 1; transform: scale(1); height: auto; } to { opacity: 0; transform: scale(0.9); height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; border: 0;} }
+
+        @media (max-width: 640px) {
+            .input-glass { flex-direction: column; }
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .icon-btn {
+            background: var(--glass);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .icon-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: rgba(17, 17, 21, 0.95);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            min-width: 160px;
+            z-index: 100;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .dropdown-menu.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            padding: 12px 16px;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--glass-border);
+            transition: var(--transition);
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent);
+        }
+        
+        .invoice-group {
+            margin-bottom: 24px;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .invoice-header {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        .invoice-header:hover { background: rgba(255, 255, 255, 0.05); }
+        .invoice-body {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-top: 1px solid var(--glass-border);
+        }
+        .invoice-body.collapsed { display: none; }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #111115;
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px) scale(0.95);
+            transition: var(--transition);
+        }
+
+        .modal-backdrop.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        .modal-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 24px;
+            transition: var(--transition);
+        }
+
+        .modal-input:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-save {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-save:hover {
+            background: #2563eb;
+        }
+
+        /* --- View Management --- */
+        .view-section {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .view-section.active {
+            display: flex;
+        }
+
+        /* --- Dev Styles --- */
+        .dev-card-scroll {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 4px;
+            padding-bottom: 20px;
+        }
+        
+        .dev-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 40px 24px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-top: 16px;
+        }
+        .avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin: 0 auto 20px auto;
+            display: block;
+            object-fit: cover;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+        }
+        .dev-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .dev-role {
+            color: var(--text-dim);
+            font-size: 15px;
+            margin-bottom: 24px;
+        }
+        .dev-desc {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            max-width: 400px;
+            margin: 0 auto 32px auto;
+            direction: ltr;
+            text-align: center;
+        }
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+        .social-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            color: var(--accent);
+        }
+
+        /* --- Sheets Styles --- */
+        #historyContainer {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 4px;
+            padding-bottom: 20px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--glass);
+            border-radius: 12px;
+            border: 1px dashed var(--glass-border);
+            color: var(--text-dim);
+            margin-top: 20px;
+        }
+        .nav-back-btn {
+            background: var(--glass);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: var(--transition);
+            margin-bottom: 16px;
+        }
+        .nav-back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="menu-container" id="menuContainer" style="margin-left: 4px;">
+                    <button class="icon-btn" id="menuBtn" onclick="window.toggleMenu(event)">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="#" onclick="window.showView('sheets-view'); return false;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            الفواتير السابقة
+                        </a>
+                        <a href="#" onclick="window.exportData(event)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            تحميل قاعدة البيانات (JSON)
+                        </a>
+                        <a href="#" onclick="window.showView('dev-view'); return false;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h10"></path><path d="M9 4v16"></path><path d="M15 9l3 3-3 3"></path><path d="M22 12h-4"></path></svg>
+                            عن المطور
+                        </a>
+                    </div>
+                </div>
+                <button class="header-action-btn save-btn" id="saveInvoiceBtn" title="حفظ الفاتورة">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                </button>
+                <button class="header-action-btn delete-all-btn" id="deleteAllBtn" title="حذف الكل">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </div>
+            <div>
+                <h1 id="mainTitle">نواقص العتبة</h1>
+                <div style="font-size: 12px; font-weight: normal; color: var(--text-dim); margin-top: 4px;" id="currentDateStr"></div>
+            </div>
+        </header>
+
+        <div id="home-view" class="view-section active">
+            <div class="input-wrapper">
+                <div class="input-glass">
+                    <div class="inputs-row">
+                        <input type="text" id="manualCategoryInput" placeholder="فرعي" style="flex: 0 0 70px; padding-right: 10px;" autocomplete="off">
+                        <input type="text" id="itemInput" placeholder="اسم القطعة..." autocomplete="off">
+                        <input type="number" id="qtyInput" placeholder="كمية" min="0" max="9999" autocomplete="off" style="flex: 0 0 60px;">
+                    </div>
+                    <div class="category-selector" id="addCategorySelector">
+                        <div style="display: flex; gap: 6px;">
+                            <button class="cat-btn active" data-cat="داخلي">داخلي</button>
+                            <button class="cat-btn" data-cat="اكسسوار">اكسسوار</button>
+                            <button class="cat-btn" data-cat="أدوات">أدوات</button>
+                        </div>
+                        <button class="btn-add" id="addBtn" style="padding: 6px 16px; height: 32px; font-size: 12px;">حفظ</button>
+                    </div>
+                </div>
+                <div id="duplicateWarning" class="warning-msg">عفواً، هذه القطعة موجودة بالفعل في القائمة!</div>
+            </div>
+
+            <div class="filters-container">
+                <div class="search-box">
+                    <input type="text" id="searchFilter" placeholder="البحث في القائمة...">
+                </div>
+                <div class="filter-chips" id="mainFilterChips">
+                    <!-- Chips injected by JS -->
+                </div>
+                <div class="filter-chips" id="subFilterChips" style="display: none; margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--glass-border);">
+                    <!-- Sub Chips injected by JS -->
+                </div>
+            </div>
+
+            <div id="listContainer">
+                <!-- Items injected by JS -->
+            </div>
+        </div>
+
+        <div id="sheets-view" class="view-section">
+            <button class="nav-back-btn" onclick="window.showView('home-view')" style="flex-shrink: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                رجوع
+            </button>
+            <div id="historyContainer">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <div id="dev-view" class="view-section">
+            <button class="nav-back-btn" onclick="window.showView('home-view')" style="flex-shrink: 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                رجوع
+            </button>
+            <div class="dev-card-scroll">
+                <div class="dev-card">
+                    <img src="20260518_013535.jpg" alt="Profile" class="avatar">
+                    <div class="dev-name">𝑹𝒂𝒉𝒎∞𝒏</div>
+                    <div class="dev-role">احدى انظمة ZAKverse</div>
+                    <div class="dev-desc">
+                        Like all applications and systems designed before, this system was designed with the support of the kindest person in the world
+                        <br><br>
+                        𝑹𝒂𝒉𝒎∞𝒏 𝑷𝒐𝒘𝒆𝒓𝒆𝒅 𝒃𝒚 𝑳𝒖𝒋𝒊 ♡
+                    </div>
+                    
+                    <div class="social-links">
+                        <a href="https://wa.me/201098002896" target="_blank" class="social-btn" aria-label="واتساب">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-backdrop" id="editModal">
+        <div class="modal-content">
+            <div class="modal-title">تعديل القطعة</div>
+            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                <input type="text" id="editItemInput" class="modal-input" placeholder="اسم القطعة..." autocomplete="off" style="margin-bottom: 0;">
+                <input type="number" id="editQtyInput" class="modal-input" placeholder="الكمية" min="0" max="9999" autocomplete="off" style="margin-bottom: 0; flex: 0 0 70px; text-align: center; -moz-appearance: textfield;">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="window.closeModal()">إلغاء</button>
+                <button class="btn-save" onclick="window.saveEdit()">حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content glass">
+            <h3 id="modalTitle">تأكيد العملية</h3>
+            <p id="modalDesc">هل أنت متأكد من تنفيذ هذه العملية؟</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="cancelBtn">إلغاء</button>
+                <button class="btn-confirm" id="confirmBtn">تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // 1. STATE & INITIALIZATION
+        // ----------------------------------------------------
+        const STORAGE_KEY = 'smart_parts_checklist';
+        let items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        // Optional upgrade: add createdDate and purchasedDate to old items if missing
+        items.forEach(i => {
+           if (!i.createdDate) {
+               const d = new Date(i.timestamp || Date.now());
+               i.createdDate = d.toISOString().split('T')[0];
+           }
+           if (i.completed && !i.purchasedDate) {
+               i.purchasedDate = i.createdDate;
+           }
+        });
+
+        // DOM Elements
+        const DOM = {
+            manualCatInput: document.getElementById('manualCategoryInput'),
+            input: document.getElementById('itemInput'),
+            qtyInput: document.getElementById('qtyInput'),
+            addBtn: document.getElementById('addBtn'),
+            addCatBtns: document.querySelectorAll('#addCategorySelector .cat-btn'),
+            search: document.getElementById('searchFilter'),
+            mainFilterChips: document.getElementById('mainFilterChips'),
+            subFilterChips: document.getElementById('subFilterChips'),
+            container: document.getElementById('listContainer'),
+            warning: document.getElementById('duplicateWarning'),
+            title: document.getElementById('mainTitle'),
+            currentDateStr: document.getElementById('currentDateStr'),
+            activeView: document.getElementById('activeView'),
+            menuBtn: document.getElementById('menuBtn'),
+            dropdownMenu: document.getElementById('dropdownMenu'),
+            // New Modal Elements
+            confirmModal: document.getElementById('confirmModal'),
+            modalTitle: document.getElementById('modalTitle'),
+            modalDesc: document.getElementById('modalDesc'),
+            confirmBtn: document.getElementById('confirmBtn'),
+            cancelBtn: document.getElementById('cancelBtn')
+        };
+
+        const getTodayDateStr = () => {
+            const date = new Date(Date.now() + (new Date().getTimezoneOffset() * 60000) + (3 * 3600000)); // approximate local check
+            return date.toISOString().split('T')[0];
+        };
+
+        const toTitleCase = (str) => {
+            if (!str) return '';
+            return str.split(/\s+/).map(word => {
+                if (word.length === 0) return '';
+                const lower = word.toLowerCase();
+                if (lower === 'or' || lower === 'aa' || lower === 'og' || lower === 'oled' || lower === 'incell') return lower.toUpperCase();
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }).join(' ');
+        };
+
+        DOM.currentDateStr.innerText = getTodayDateStr();
+
+        // JS State for Add Category
+        let selectedAddCategory = 'داخلي';
+
+        // Add Category Selection
+        DOM.addCatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                DOM.addCatBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedAddCategory = btn.dataset.cat;
+                DOM.manualCatInput.focus();
+            });
+        });
+
+        // Focus first input
+        if (DOM.manualCatInput) DOM.manualCatInput.focus();
+
+        // ----------------------------------------------------
+        // Navigation Logic
+        // ----------------------------------------------------
+        DOM.manualCatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                DOM.input.focus();
+            }
+        });
+
+        DOM.input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                DOM.qtyInput.focus();
+            }
+        });
+
+        DOM.qtyInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAdd();
+            }
+        });
+
+        // ----------------------------------------------------
+        // Confirmation Modal Logic
+        // ----------------------------------------------------
+        let onConfirmCallback = null;
+
+        window.showConfirm = function(title, desc, callback) {
+            DOM.modalTitle.innerText = title;
+            DOM.modalDesc.innerText = desc;
+            onConfirmCallback = callback;
+            DOM.confirmModal.classList.add('active');
+        };
+
+        DOM.cancelBtn.onclick = () => {
+            DOM.confirmModal.classList.remove('active');
+            onConfirmCallback = null;
+        };
+
+        DOM.confirmBtn.onclick = () => {
+            if (onConfirmCallback) onConfirmCallback();
+            DOM.confirmModal.classList.remove('active');
+            onConfirmCallback = null;
+        };
+
+        document.getElementById('saveInvoiceBtn').onclick = () => {
+            const purchasedItems = items.filter(i => i.completed && !i.archived);
+            if (purchasedItems.length === 0) return;
+
+            showConfirm(
+                'حفظ الفاتورة',
+                `سيتم نقل ${purchasedItems.length} قطع إلى الفواتير السابقة. هل أنت متأكد؟`,
+                () => {
+                    purchasedItems.forEach(i => i.archived = true);
+                    save();
+                    render();
+                }
+            );
+        };
+
+        document.getElementById('deleteAllBtn').onclick = () => {
+            const activeItems = items.filter(i => !i.archived);
+            if (activeItems.length === 0) return;
+
+            showConfirm(
+                'حذف الكل',
+                'سيتم حذف جميع القطع في القائمة الحالية (المشتراة وغير المشتراة). هل أنت متأكد؟',
+                () => {
+                    items = items.filter(i => i.archived);
+                    save();
+                    render();
+                }
+            );
+        };
+
+        // ----------------------------------------------------
+        // 2. SMART CLASSIFICATION ENGINE
+        // ----------------------------------------------------
+        const NLP_DICTIONARY = {
+            tags: {
+                'Incell': ['incell', 'ان سيل', 'انسيل', 'in-cell'],
+                'OLED': ['oled', 'اوليد', 'أوليد'],
+                'أصلي': ['or', 'اوريجينال', 'original', 'اصلي', 'أصلي', 'اورجنال', 'og'],
+                'هاي كوبي': ['high copy', 'هاي كوبي', 'كوبي'],
+                '+500': ['+500', '500'],
+                'بفريم': ['بفريم', 'with frame', 'بالفريم'],
+                'بدون فريم': ['بدون فريم', 'بدون', 'without frame'],
+                'Micro': ['micro', 'مايكرو', 'ميكرو'],
+                'Type-C': ['type c', 'type-c', 'تايب سي', 'typec'],
+                'Lightning': ['lightning', 'ايفون', 'iphone', 'لايتنينج', 'لايتنج'],
+                'Wireless': ['wireless', 'وايرلس', 'بلوتوث', 'bluetooth', 'بدون سلك'],
+                'Wired': ['wired', 'سلك', 'عادي', 'بسلك']
+            },
+            categories: {
+                'داخلي': {
+                    'شاشة': ['شاشه', 'شاشة', 'screen', 'lcd', 'display', 'باغة', 'نص', 'شاشية', 'incell', 'aa', 'or', 'oled', '+500'],
+                    'فريم': ['فريم', 'frame', 'إطار', 'اطار'],
+                    'ميدل هاوس': ['ميدل', 'middle'],
+                    'هاوسنج': ['هاوسنج', 'housing', 'شاسيه', 'هاوس'],
+                    'بطارية': ['بطاريه', 'بطارية', 'battery', 'batt', 'بطاريا'],
+                    'ظهر': ['ظهر', 'back', 'باك'],
+                    'بصمة': ['بصمه', 'بصمة', 'fingerprint', 'زرار'],
+                    'جرس': ['جرس', 'bell', 'speaker', 'سبيكر', 'مايك'],
+                    'فلاتة/باور': ['باور', 'power', 'بور', 'فلاته باور', 'فلاتة باور'],
+                    'فلاتة/فوليوم': ['فوليوم', 'volume', 'الصوت', 'صوت', 'فلاته فوليوم'],
+                    'فلاتة/شحن': ['شحن', 'charging', 'سوكت', 'سكت', 'فلاته شحن', 'فلاتة شحن', 'بوردة شحن'],
+                    'كاميرا': ['كاميرا', 'كاميره', 'camera', 'cam', 'كميرا', 'عدسة', 'عدسه']
+                },
+                'اكسسوار': {
+                    'اسكرين': ['اسكرين', 'screen protector', 'لصقة', 'لصقه', 'حماية', 'زجاج'],
+                    'شاحن': ['شاحن', 'charger', 'رأس شاحن', 'راس شاحن'],
+                    'وصلة': ['وصلة', 'وصله', 'cable', 'كابل'],
+                    'سماعات': ['سماعات', 'سماعة', 'سماعه', 'earphone', 'headphone', 'هاند فري', 'ايربودز', 'airpods'],
+                    'صب': ['صب', 'sub', 'مضخم', 'مكبر صوت']
+                },
+                'أدوات': {
+                    'مفك': ['مفك', 'مفكات', 'screwdriver'],
+                    'جفت': ['جفت', 'ملقاط', 'tweezers'],
+                    'قصدير': ['قصدير', 'سلك لحام', 'solder', 'قصدير سائل'],
+                    'فلاكس': ['فلاكس', 'مساعد لحام', 'flux', 'رجينة'],
+                    'كاوية': ['كاوية', 'كاويه', 'مكواة', 'مكوه', 'iron', 'سن كاوية'],
+                    'هوت اير': ['هوت', 'هوت اير', 'hot air', 'هيتر'],
+                    'فتاحة': ['فتاحة', 'فتاحه', 'موس', 'فتاحات', 'مشرط'],
+                    'مادة': ['مادة', 'ماده', 'b7000', 't7000', 'غراء', 'لصق', 'تنظيف', '530', 'تنر']
+                }
+            }
+        };
+
+        function parseAndClassify(rawText) {
+            const textLow = rawText.toLowerCase();
+            const words = textLow.split(/\s+/);
+            let result = { category: 'غير مصنف', subcategory: 'غير ذلك', tags: [] };
+
+            for (const [tag, keys] of Object.entries(NLP_DICTIONARY.tags)) {
+                if (keys.some(k => {
+                    if (k.length <= 3) return words.includes(k);
+                    return textLow.includes(k);
+                })) result.tags.push(tag);
+            }
+
+            const hasOR = words.includes('or');
+            let foundCat = null;
+            let foundSub = null;
+            let matchIsOnlyGeneric = false;
+
+            for (const [catName, subCats] of Object.entries(NLP_DICTIONARY.categories)) {
+                for (const [subName, keys] of Object.entries(subCats)) {
+                    let matchingKeys = keys.filter(k => {
+                        if (k === 'aa' || k === 'or' || k === 'og') return words.includes(k);
+                        return textLow.includes(k);
+                    });
+
+                    if (matchingKeys.length > 0) {
+                        const isGeneric = matchingKeys.every(k => k === 'or' || k === 'aa' || k === 'og');
+                        
+                        if (!foundCat || !isGeneric) {
+                            foundCat = catName;
+                            foundSub = subName;
+                            matchIsOnlyGeneric = isGeneric;
+                            if (!isGeneric) break;
+                        }
+                    }
+                }
+                if (foundCat && !matchIsOnlyGeneric) break;
+            }
+
+            if (foundCat) {
+                result.category = foundCat;
+                let finalSub = foundSub.includes('/') ? foundSub.split('/')[1] : foundSub;
+
+                if (foundSub === 'شاشة' && (textLow.includes('+f') || textLow.includes('+ f'))) {
+                    finalSub = 'شاشة + فريم';
+                }
+
+                result.subcategory = finalSub;
+            }
+
+            if (hasOR && result.category !== 'غير مصنف' && result.subcategory !== 'شاشة') {
+                if (!result.tags.includes('أصلي')) result.tags.push('أصلي');
+            }
+
+            return result;
+        }
+
+        let activeFilters = new Set();
+        let usedMainCatsGlobal = new Set();
+        let usedSubCatsByMainGlobal = {};
+
+        function renderChips() {
+            usedMainCatsGlobal = new Set();
+            usedSubCatsByMainGlobal = {};
+            
+            items.forEach(i => {
+                if (i.category && i.category !== 'غير مصنف') {
+                    usedMainCatsGlobal.add(i.category);
+                    if (!usedSubCatsByMainGlobal[i.category]) usedSubCatsByMainGlobal[i.category] = new Set();
+                    if (i.subcategory && i.subcategory !== 'غير ذلك') usedSubCatsByMainGlobal[i.category].add(i.subcategory);
+                    if (i.tags) i.tags.forEach(t => usedSubCatsByMainGlobal[i.category].add(t));
+                }
+            });
+
+            // Main Categories HTML
+            let mainHtml = `<div class="chip ${activeFilters.size === 0 ? 'active' : ''}" onclick="window.clearFilters()">× عرض الكل</div>`;
+            
+            const mainCatOrder = ['داخلي', 'اكسسوار', 'أدوات', 'غير مصنف'];
+            const sortedMain = Array.from(usedMainCatsGlobal).sort((a,b) => {
+                let idxA = mainCatOrder.indexOf(a);
+                let idxB = mainCatOrder.indexOf(b);
+                if(idxA === -1) idxA = 99;
+                if(idxB === -1) idxB = 99;
+                return idxA - idxB;
+            });
+
+            sortedMain.forEach(f => {
+                mainHtml += `<div class="chip ${activeFilters.has(f) ? 'active' : ''}" onclick="window.toggleFilter('${f}', true)">${f}</div>`;
+            });
+
+            DOM.mainFilterChips.innerHTML = mainHtml;
+
+            // Sub Categories HTML
+            let subHtml = '';
+            const selectedMainCats = sortedMain.filter(f => activeFilters.has(f));
+            
+            if (selectedMainCats.length > 0) {
+                const visibleSubCats = new Set();
+                selectedMainCats.forEach(mc => {
+                    if (usedSubCatsByMainGlobal[mc]) {
+                        usedSubCatsByMainGlobal[mc].forEach(sc => visibleSubCats.add(sc));
+                    }
+                });
+
+                if (visibleSubCats.size > 0) {
+                    Array.from(visibleSubCats).sort().forEach(f => {
+                        subHtml += `<div class="chip sub-chip ${activeFilters.has(f) ? 'active' : ''}" onclick="window.toggleFilter('${f}', false)">${f}</div>`;
+                    });
+                    DOM.subFilterChips.style.display = 'flex';
+                    DOM.subFilterChips.innerHTML = subHtml;
+                } else {
+                    DOM.subFilterChips.style.display = 'none';
+                }
+            } else {
+                DOM.subFilterChips.style.display = 'none';
+            }
+        }
+
+        window.clearFilters = function() {
+            activeFilters.clear();
+            renderChips();
+            render();
+        };
+
+        window.toggleFilter = function(f, isMain) {
+            if (isMain) {
+                if (activeFilters.has(f)) {
+                    activeFilters.delete(f);
+                    if (usedSubCatsByMainGlobal[f]) {
+                        usedSubCatsByMainGlobal[f].forEach(sub => activeFilters.delete(sub));
+                    }
+                } else {
+                    usedMainCatsGlobal.forEach(mainF => {
+                        if (activeFilters.has(mainF)) {
+                            activeFilters.delete(mainF);
+                            if (usedSubCatsByMainGlobal[mainF]) {
+                                usedSubCatsByMainGlobal[mainF].forEach(sub => activeFilters.delete(sub));
+                            }
+                        }
+                    });
+                    activeFilters.add(f);
+                }
+            } else {
+                if (activeFilters.has(f)) {
+                    activeFilters.delete(f);
+                } else {
+                    activeFilters.add(f);
+                }
+            }
+            renderChips();
+            render();
+        };
+
+        // ----------------------------------------------------
+        // 3. CORE LOGIC
+        // ----------------------------------------------------
+        function save() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+            renderChips();
+            render();
+            const sheetsView = document.getElementById('sheets-view');
+            if (sheetsView && sheetsView.classList.contains('active')) {
+                renderSheets();
+            }
+        }
+
+        function handleAdd() {
+            let manualSubCat = DOM.manualCatInput.value.trim();
+            let text = DOM.input.value.trim();
+            if (!text && !manualSubCat) return;
+            
+            manualSubCat = toTitleCase(manualSubCat);
+            text = toTitleCase(text);
+
+            let qty = parseInt(DOM.qtyInput.value.trim());
+            if (isNaN(qty) || qty < 0) qty = 0;
+
+            const duplicateText = text || manualSubCat;
+            if (items.some(i => !i.completed && i.text.toLowerCase() === duplicateText.toLowerCase())) {
+                DOM.warning.style.display = 'block';
+                setTimeout(() => DOM.warning.style.display = 'none', 3500);
+                DOM.manualCatInput.focus();
+                return;
+            }
+
+            // NLP processing for tags
+            const classification = parseAndClassify(manualSubCat + " " + text);
+            
+            // Override with UI selections
+            const category = selectedAddCategory;
+            const subcategory = manualSubCat || 'عام';
+
+            const today = getTodayDateStr();
+            
+            items.unshift({
+                id: Date.now().toString(),
+                text: text || subcategory,
+                qty: qty,
+                category: category,
+                subcategory: subcategory,
+                tags: classification.tags,
+                completed: false,
+                timestamp: Date.now(),
+                createdDate: today,
+                purchasedDate: null
+            });
+
+            DOM.manualCatInput.value = '';
+            DOM.input.value = '';
+            DOM.qtyInput.value = '';
+            DOM.manualCatInput.focus();
+
+            save();
+        }
+
+        function toggleItem(id) {
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item.completed = !item.completed;
+                if (item.completed) {
+                    item.purchasedDate = getTodayDateStr();
+                    item.timestamp = Date.now(); 
+                } else {
+                    item.purchasedDate = null;
+                }
+                save();
+            }
+        }
+
+        let currentEditId = null;
+
+        function editItem(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            currentEditId = id;
+            document.getElementById('editItemInput').value = item.text;
+            document.getElementById('editQtyInput').value = item.qty !== undefined ? item.qty : 0;
+            document.getElementById('editModal').classList.add('active');
+            setTimeout(() => document.getElementById('editItemInput').focus(), 100);
+        }
+
+        window.closeModal = function() {
+            document.getElementById('editModal').classList.remove('active');
+            currentEditId = null;
+        };
+
+        window.saveEdit = function() {
+            if (!currentEditId) return;
+            const item = items.find(i => i.id === currentEditId);
+            if (!item) return;
+
+            let newText = document.getElementById('editItemInput').value.trim();
+            newText = toTitleCase(newText);
+            
+            let newQty = parseInt(document.getElementById('editQtyInput').value.trim());
+            if (isNaN(newQty) || newQty < 0) newQty = 0;
+
+            if (newText !== '') {
+                const refreshed = parseAndClassify(newText);
+                item.text = newText;
+                item.qty = newQty;
+                item.category = refreshed.category;
+                item.subcategory = refreshed.subcategory;
+                item.tags = refreshed.tags;
+                save();
+            }
+            closeModal();
+        };
+
+        document.getElementById('editItemInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('editQtyInput').focus();
+        });
+        document.getElementById('editQtyInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') window.saveEdit();
+        });
+
+        function deleteItem(id) {
+            showConfirm(
+                'حذف قطعة',
+                'هل أنت متأكد من رغبتك في حذف هذه القطعة من القائمة الحالية؟',
+                () => {
+                    const el = document.getElementById('item-' + id);
+                    if (el) {
+                        el.style.animation = 'shrinkOut 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+                        setTimeout(() => {
+                            items = items.filter(i => i.id !== id);
+                            save();
+                        }, 300);
+                    } else {
+                        items = items.filter(i => i.id !== id);
+                        save();
+                    }
+                }
+            );
+        }
+
+        window.toggleMenu = function(e) {
+            e.stopPropagation();
+            DOM.dropdownMenu.classList.toggle('active');
+        };
+
+        window.onclick = function(e) {
+            if (!DOM.menuBtn.contains(e.target) && !DOM.dropdownMenu.contains(e.target)) {
+                DOM.dropdownMenu.classList.remove('active');
+            }
+        };
+
+        window.exportData = function(e) {
+            if (e) e.preventDefault();
+            const dataStr = JSON.stringify(items, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "database.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            DOM.dropdownMenu.classList.remove('active');
+        };
+
+        // ----------------------------------------------------
+        // 4. RENDER ENGINE
+        // ----------------------------------------------------
+        const SVGS = {
+            edit: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>',
+            trash: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>',
+            empty: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>'
+        };
+
+        function generateCard(item, readOnly = false) {
+            const itemQty = item.qty !== undefined ? item.qty : 0;
+            const subText = item.subcategory && item.subcategory !== 'عام' && item.subcategory !== 'غير ذلك' ? item.subcategory : '';
+            
+            return `
+                <div class="item-card ${item.completed ? 'completed' : ''}" id="item-${item.id}">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" class="checkbox" ${item.completed ? 'checked' : ''} ${readOnly ? 'disabled' : `onchange="window.toggleItem('${item.id}')"`}>
+                    </div>
+                    <div class="item-content">
+                        <div class="item-header">
+                            <div class="item-name-wrapper" ${readOnly ? '' : `onclick="window.toggleItem('${item.id}')"`} style="${readOnly ? '' : 'cursor:pointer;'}">
+                                <span class="qty-badge">${itemQty}</span>
+                                <span class="dot-sep">●</span>
+                                <div class="item-name" style="cursor:inherit;">${item.text}</div>
+                            </div>
+                        </div>
+                        <div class="tags-row" ${readOnly ? '' : `onclick="window.toggleItem('${item.id}')"`} style="${readOnly ? '' : 'cursor:pointer;'}">
+                            <span class="tag cat">${item.category}</span>
+                            ${subText ? `<span class="tag sub">${subText}</span>` : ''}
+                        </div>
+                    </div>
+                    ${!readOnly ? `
+                    <div class="item-actions">
+                        <button class="btn-icon edit" onclick="window.editItem('${item.id}')">${SVGS.edit}</button>
+                        <button class="btn-icon delete" onclick="window.deleteItem('${item.id}')">${SVGS.trash}</button>
+                    </div>` : ''}
+                </div>
+            `;
+        }
+
+        function render() {
+            const today = getTodayDateStr();
+
+            // Render Active View
+            const searchQ = DOM.search.value.toLowerCase().trim();
+
+            // In Active view: 
+            // 1. Pending items (carry-over automatically as they have no purchasedDate)
+            // 2. Completed items whose purchasedDate is TODAY and NOT archived.
+            const activeItems = items.filter(i => {
+                return (!i.completed && !i.archived) || (i.completed && i.purchasedDate === today && !i.archived);
+            });
+
+            // Filter with exact hierarchical matching logic
+            const activeMain = Array.from(activeFilters).filter(f => usedMainCatsGlobal.has(f));
+            const activeSub = Array.from(activeFilters).filter(f => !usedMainCatsGlobal.has(f));
+
+            const filtered = activeItems.filter(i => {
+                const matchSearch = i.text.toLowerCase().includes(searchQ) || 
+                                    i.category.includes(searchQ) || 
+                                    i.subcategory.includes(searchQ);
+                
+                let matchFilter = true;
+                if (activeMain.length > 0) {
+                    if (!activeMain.includes(i.category)) {
+                        matchFilter = false;
+                    } else {
+                        // Category is selected. Ensure we comply with selected subcategories *for this category* if any are selected
+                        const subsForCat = activeSub.filter(sub => usedSubCatsByMainGlobal[i.category] && usedSubCatsByMainGlobal[i.category].has(sub));
+                        if (subsForCat.length > 0) {
+                            const itemHasSub = subsForCat.includes(i.subcategory) || (i.tags && i.tags.some(t => subsForCat.includes(t)));
+                            if (!itemHasSub) matchFilter = false;
+                        }
+                    }
+                } else if (activeSub.length > 0) {
+                    const itemHasSub = activeSub.includes(i.subcategory) || (i.tags && i.tags.some(t => activeSub.includes(t)));
+                    if (!itemHasSub) matchFilter = false;
+                }
+                
+                return matchSearch && matchFilter;
+            });
+
+            const pending = filtered.filter(i => !i.completed).sort((a, b) => b.timestamp - a.timestamp);
+            const purchased = filtered.filter(i => i.completed).sort((a, b) => b.timestamp - a.timestamp);
+
+            let html = '';
+
+            if (pending.length > 0) {
+                html += '<div class="section-header">قيد الانتظار (' + pending.length + ')</div>';
+                html += pending.map(i => generateCard(i)).join('');
+            }
+
+            if (purchased.length > 0) {
+                html += '<div class="section-header" style="margin-top: 30px; color: var(--success)">تم الشراء اليوم (' + purchased.length + ')</div>';
+                html += purchased.map(i => generateCard(i)).join('');
+            }
+
+            if (filtered.length === 0 && activeItems.length > 0) {
+                html = '<div class="empty-state">لا توجد نتائج تطابق بحثك.</div>';
+            } else if (activeItems.length === 0) {
+                html = `
+                    <div class="empty-state">
+                        ${SVGS.empty}
+                        <h2>القائمة فارغة</h2>
+                        <p style="margin-top:8px">ابدأ بإضافة بعض قطع الغيار أعلاه لتنظيم مشترياتك.</p>
+                    </div>
+                `;
+            }
+
+            DOM.container.innerHTML = html;
+        }
+
+        // ----------------------------------------------------
+        // 5. EVENT LISTENERS
+        // ----------------------------------------------------
+        DOM.addBtn.addEventListener('click', handleAdd);
+        DOM.input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const text = DOM.input.value.trim();
+                if (text) {
+                    DOM.qtyInput.focus();
+                    DOM.qtyInput.select();
+                }
+            }
+        });
+        DOM.qtyInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAdd();
+            }
+        });
+        DOM.search.addEventListener('input', render);
+        window.toggleItem = toggleItem;
+        window.editItem = editItem;
+        window.deleteItem = deleteItem;
+
+        renderChips();
+        render();
+
+        // ----------------------------------------------------
+        // 6. VIEW MANAGEMENT & SHEETS
+        // ----------------------------------------------------
+        window.showView = function(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
+            DOM.dropdownMenu.classList.remove('active');
+            
+            if (viewId === 'sheets-view') {
+                renderSheets();
+            }
+        };
+
+        const expandedInvoices = {};
+        
+        function renderSheets() {
+            const historyContainer = document.getElementById('historyContainer');
+            const historyInvoices = {};
+            
+            items.forEach(i => {
+                if (i.completed && i.purchasedDate && i.archived) {
+                    if (!historyInvoices[i.purchasedDate]) historyInvoices[i.purchasedDate] = [];
+                    historyInvoices[i.purchasedDate].push(i);
+                }
+            });
+
+            const sortedDates = Object.keys(historyInvoices).sort((a, b) => new Date(b) - new Date(a));
+            
+            if (sortedDates.length === 0) {
+                historyContainer.innerHTML = '<div class="empty-state">لا توجد فواتير سابقة حتى الآن.</div>';
+                return;
+            }
+
+            let histHtml = '';
+            sortedDates.forEach(date => {
+                const isExpanded = expandedInvoices[date] || false;
+                const invItems = historyInvoices[date];
+                histHtml += `
+                    <div class="invoice-group">
+                        <div class="invoice-header" onclick="window.toggleInvoice('${date}')">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <svg style="opacity:0.7; transform: ${isExpanded ? 'rotate(90deg)' : 'rotate(0)'}; transition: transform 0.2s;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                <span>فاتورة يوم: <span style="color: var(--accent); margin-right: 4px;">${date}</span></span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">${invItems.length} عناصر</span>
+                                <button class="btn-icon delete" onclick="window.deleteInvoice('${date}', event)" title="حذف الفاتورة">${SVGS.trash}</button>
+                            </div>
+                        </div>
+                        <div class="invoice-body ${isExpanded ? '' : 'collapsed'}">
+                            ${invItems.map(i => generateCard(i, true)).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            historyContainer.innerHTML = histHtml;
+        }
+
+        window.toggleInvoice = function(dateStr) {
+            expandedInvoices[dateStr] = !expandedInvoices[dateStr];
+            renderSheets();
+        };
+
+        window.deleteInvoice = function(dateStr, event) {
+            if (event) event.stopPropagation();
+            showConfirm(
+                'حذف الفاتورة',
+                `هل أنت متأكد من رغبتك في حذف فاتورة يوم ${dateStr} بالكامل وجميع عناصرها؟`,
+                () => {
+                    items = items.filter(i => !(i.completed && i.purchasedDate === dateStr && i.archived));
+                    save();
+                }
+            );
+        };
+    </script>
+</body>
+</html>
