@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "Item": {
+      "title": "List Item",
+      "description": "An individual checklist item in the smart parts checklist",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the item"
+        },
+        "text": {
+          "type": "string",
+          "description": "Name or description of the parts item"
+        },
+        "qty": {
+          "type": "integer",
+          "description": "Quantity requested"
+        },
+        "category": {
+          "type": "string",
+          "description": "Primary category (e.g. Engine, Body, etc)"
+        },
+        "subcategory": {
+          "type": "string",
+          "description": "Detailed subcategory"
+        },
+        "tags": {
+          "type": "array",
+          "description": "List of related smart NLP tags"
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Whether the purchase is complete"
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Creation or modification epoch timestamp"
+        },
+        "createdDate": {
+          "type": "string",
+          "description": "Format YYYY-MM-DD"
+        },
+        "purchasedDate": {
+          "type": "string",
+          "description": "Format YYYY-MM-DD, or null"
+        },
+        "archived": {
+          "type": "boolean",
+          "description": "Whether it's moved to historical invoices"
+        }
+      },
+      "required": ["id", "text", "category", "completed", "timestamp", "createdDate"]
+    }
+  },
+  "firestore": {
+    "items/{itemId}": {
+      "schema": "Item",
+      "description": "Collection of all checklist parts items"
+    }
+  }
+}

@@ -1119,16 +1119,72 @@
 
     <div id="confirmModal" class="modal-overlay">
         <div class="modal-content glass">
-            <h3 id="modalTitle">تأكيد العملية</h3>
-            <p id="modalDesc">هل أنت متأكد من تنفيذ هذه العملية؟</p>
+            <h3 id="modalTitle">تأكيد</h3>
+            <p id="modalDesc" style="margin: 10px 0 20px 0; font-size: 14px; opacity: 0.8;"></p>
             <div class="modal-actions">
-                <button class="btn-cancel" id="cancelBtn">إلغاء</button>
-                <button class="btn-confirm" id="confirmBtn">تأكيد</button>
+                <button id="cancelBtn" class="btn-cancel">إلغاء</button>
+                <button id="confirmBtn" class="btn-save">تأكيد</button>
             </div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from 'firebase/app';
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch, getDocFromServer } from 'firebase/firestore';
+        import firebaseConfig from './firebase-applet-config.json';
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+        // Core validation of connection to Firestore as required by Skill
+        async function testConnection() {
+            try {
+                await getDocFromServer(doc(db, 'test', 'connection'));
+                console.log("Firestore connection test passed.");
+            } catch (error) {
+                if (error instanceof Error && error.message.includes('the client is offline')) {
+                    console.error("Please check your Firebase configuration.", error);
+                }
+            }
+        }
+        testConnection();
+
+        const OperationType = {
+            CREATE: 'create',
+            UPDATE: 'update',
+            DELETE: 'delete',
+            LIST: 'list',
+            GET: 'get',
+            WRITE: 'write'
+        };
+
+        function handleFirestoreError(error, operationType, path) {
+            const errInfo = {
+                error: error instanceof Error ? error.message : String(error),
+                operationType,
+                path,
+                authInfo: {}
+            };
+            console.error('Firestore Error: ', JSON.stringify(errInfo));
+            throw new Error(JSON.stringify(errInfo));
+        }
+
+        async function dbSaveItem(item) {
+            try {
+                await setDoc(doc(db, 'items', item.id), item);
+            } catch (e) {
+                handleFirestoreError(e, OperationType.WRITE, 'items/' + item.id);
+            }
+        }
+
+        async function dbDeleteItem(id) {
+            try {
+                await deleteDoc(doc(db, 'items', id));
+            } catch (e) {
+                handleFirestoreError(e, OperationType.DELETE, 'items/' + id);
+            }
+        }
+
         // ----------------------------------------------------
         // 1. STATE & INITIALIZATION
         // ----------------------------------------------------
@@ -1143,6 +1199,41 @@
            if (i.completed && !i.purchasedDate) {
                i.purchasedDate = i.createdDate;
            }
+         });
+
+        // Setup real-time listener and automatic local-to-cloud migration
+        onSnapshot(collection(db, 'items'), async (snapshot) => {
+            if (snapshot.empty && items.length > 0) {
+                console.log("Migrating local items to Firestore...");
+                const batch = writeBatch(db);
+                items.forEach(item => {
+                    const docRef = doc(db, 'items', item.id);
+                    batch.set(docRef, item);
+                });
+                try {
+                    await batch.commit();
+                    console.log("Migration successful!");
+                } catch (e) {
+                    console.error("Migration failed:", e);
+                }
+                return;
+            }
+
+            const list = [];
+            snapshot.forEach((snapshotDoc) => {
+                list.push(snapshotDoc.data());
+            });
+            list.sort((a, b) => b.timestamp - a.timestamp);
+            items = list;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+            renderChips();
+            render();
+            const sheetsView = document.getElementById('sheets-view');
+            if (sheetsView && sheetsView.classList.contains('active')) {
+                renderSheets();
+            }
+        }, (error) => {
+            handleFirestoreError(error, OperationType.LIST, 'items');
         });
 
         // DOM Elements
@@ -1257,10 +1348,18 @@
             showConfirm(
                 'حفظ الفاتورة',
                 `سيتم نقل ${purchasedItems.length} قطع إلى الفواتير السابقة. هل أنت متأكد؟`,
-                () => {
-                    purchasedItems.forEach(i => i.archived = true);
-                    save();
-                    render();
+                async () => {
+                    const batch = writeBatch(db);
+                    purchasedItems.forEach(i => {
+                        i.archived = true;
+                        const docRef = doc(db, 'items', i.id);
+                        batch.set(docRef, i);
+                    });
+                    try {
+                        await batch.commit();
+                    } catch (e) {
+                        handleFirestoreError(e, OperationType.WRITE, 'items/batch-archive');
+                    }
                 }
             );
         };
@@ -1272,10 +1371,17 @@
             showConfirm(
                 'حذف الكل',
                 'سيتم حذف جميع القطع في القائمة الحالية (المشتراة وغير المشتراة). هل أنت متأكد؟',
-                () => {
-                    items = items.filter(i => i.archived);
-                    save();
-                    render();
+                async () => {
+                    const batch = writeBatch(db);
+                    activeItems.forEach(i => {
+                        const docRef = doc(db, 'items', i.id);
+                        batch.delete(docRef);
+                    });
+                    try {
+                        await batch.commit();
+                    } catch (e) {
+                        handleFirestoreError(e, OperationType.DELETE, 'items/batch-delete-active');
+                    }
                 }
             );
         };
@@ -1526,7 +1632,7 @@
 
             const today = getTodayDateStr();
             
-            items.unshift({
+            const newItem = {
                 id: Date.now().toString(),
                 text: text || subcategory,
                 qty: qty,
@@ -1537,14 +1643,19 @@
                 timestamp: Date.now(),
                 createdDate: today,
                 purchasedDate: null
-            });
+            };
+
+            // Optimistic update
+            items.unshift(newItem);
+            save();
 
             DOM.manualCatInput.value = '';
             DOM.input.value = '';
             DOM.qtyInput.value = '';
             DOM.manualCatInput.focus();
 
-            save();
+            // Cloud sync
+            dbSaveItem(newItem);
         }
 
         function toggleItem(id) {
@@ -1558,6 +1669,7 @@
                     item.purchasedDate = null;
                 }
                 save();
+                dbSaveItem(item);
             }
         }
 
@@ -1598,6 +1710,7 @@
                 item.subcategory = refreshed.subcategory;
                 item.tags = refreshed.tags;
                 save();
+                dbSaveItem(item);
             }
             closeModal();
         };
@@ -1620,10 +1733,12 @@
                         setTimeout(() => {
                             items = items.filter(i => i.id !== id);
                             save();
+                            dbDeleteItem(id);
                         }, 300);
                     } else {
                         items = items.filter(i => i.id !== id);
                         save();
+                        dbDeleteItem(id);
                     }
                 }
             );
@@ -1866,9 +1981,24 @@
             showConfirm(
                 'حذف الفاتورة',
                 `هل أنت متأكد من رغبتك في حذف فاتورة يوم ${dateStr} بالكامل وجميع عناصرها؟`,
-                () => {
+                async () => {
+                    const toDelete = items.filter(i => i.completed && i.purchasedDate === dateStr && i.archived);
+                    
+                    // Optimistic update
                     items = items.filter(i => !(i.completed && i.purchasedDate === dateStr && i.archived));
                     save();
+
+                    // Cloud sync
+                    const batch = writeBatch(db);
+                    toDelete.forEach(i => {
+                        const docRef = doc(db, 'items', i.id);
+                        batch.delete(docRef);
+                    });
+                    try {
+                        await batch.commit();
+                    } catch (e) {
+                        handleFirestoreError(e, OperationType.DELETE, 'items/batch-delete-invoice');
+                    }
                 }
             );
         };

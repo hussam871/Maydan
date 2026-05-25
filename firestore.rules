@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Schema Validation Helper for Item
+    function isValidItem(data) {
+      return data.keys().hasAll(['id', 'text', 'category', 'completed', 'timestamp', 'createdDate'])
+        && data.id is string
+        && data.id.size() <= 64
+        && data.text is string
+        && data.text.size() <= 200
+        && data.qty is int
+        && data.qty >= 0
+        && data.category is string
+        && data.category.size() <= 100
+        && data.subcategory is string
+        && data.subcategory.size() <= 100
+        && data.tags is list
+        && data.tags.size() <= 15
+        && data.completed is bool
+        && data.timestamp is int
+        && data.createdDate is string
+        && data.createdDate.size() <= 20
+        && (data.purchasedDate == null || (data.purchasedDate is string && data.purchasedDate.size() <= 20))
+        && (data.archived == null || data.archived is bool);
+    }
+
+    // Match statement for items
+    match /items/{itemId} {
+      allow list, get: if true;
+      allow create: if isValidId(itemId) && isValidItem(incoming()) && incoming().id == itemId;
+      allow update: if isValidId(itemId) && isValidItem(incoming()) && incoming().id == itemId;
+      allow delete: if isValidId(itemId);
+    }
+  }
+}
